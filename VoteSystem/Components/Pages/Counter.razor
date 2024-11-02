@@ -1,0 +1,73 @@
+﻿@page "/counter"
+@using Microsoft.AspNetCore.SignalR.Client
+@rendermode InteractiveServer
+@inject NavigationManager Navigation
+
+<PageTitle>Counter</PageTitle>
+
+<PageTitle>Vote System</PageTitle>
+
+<div class="row">
+    <div class="col-md-3">
+        <h1>Persona 1</h1>
+        <p>Total: @votes[1].ToString()</p>
+    </div>
+    <div class="col-md-3">
+        <h1>Persona 2</h1>
+        <p>Total: @votes[2].ToString()</p>
+    </div>
+    <div class="col-md-3">
+        <h1>Persona 3</h1>
+        <p>Total: @votes[3].ToString()</p>
+    </div>
+    <div class="col-md-3">
+        <h1>Persona 4</h1>
+        <p>Total: @votes[4].ToString()</p>
+    </div>
+</div>
+
+<div class="container">
+    <Doughnut Votes="votes"/>
+</div>
+
+@code {
+    private HubConnection? hubConnection;
+
+    private Dictionary<int, int> votes = new Dictionary<int, int>()
+{
+        { 1, 0 },
+        { 2, 0 },
+        { 3, 0 },
+        { 4, 0 }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/votehub"))
+            .Build();
+
+        hubConnection.On<string, int>("ReceiveMessage", (user, vote) =>
+        {
+            var currentCount = votes[vote];
+            currentCount += 1;
+            votes[vote] = currentCount;
+
+            InvokeAsync(StateHasChanged);
+        });
+
+        await hubConnection.StartAsync();
+    }
+
+    public bool IsConnected =>
+        hubConnection?.State == HubConnectionState.Connected;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+
+}

@@ -1,0 +1,94 @@
+﻿<DoughnutChart @ref="doughnutChart" Width="350"/>
+
+@code {
+    [Parameter] public Dictionary<int, int> Votes { get; set; }
+
+    private DoughnutChart doughnutChart = default!;
+    private DoughnutChartOptions doughnutChartOptions = default!;
+    private ChartData chartData = default!;
+    private string[]? backgroundColors;
+
+    private int datasetsCount = 0;
+    private int dataLabelsCount = 0;
+
+    private Random random = new();
+
+    protected override void OnInitialized()
+    {
+        chartData = new ChartData()
+        {
+            Labels = GetLabels(),
+            Datasets = GetDefaultDataSets()
+        };
+
+        backgroundColors = ColorUtility.CategoricalTwelveColors;
+        doughnutChartOptions = new();
+        doughnutChartOptions.Responsive = true;
+        doughnutChartOptions.Plugins.Title!.Text = "2024 - Votes";
+        doughnutChartOptions.Plugins.Title.Display = true;
+    }
+
+    private async Task RefreshData()
+    {
+        chartData = new ChartData()
+        {
+            Labels = GetLabels(),
+            Datasets = GetDefaultDataSets()
+        };
+
+        await doughnutChart.UpdateAsync(chartData, doughnutChartOptions);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await doughnutChart.InitializeAsync(chartData, doughnutChartOptions);
+        }
+        else
+        {
+            await RefreshData();
+        }
+
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    private List<string> GetLabels()
+    {
+        var labels = new List<string>();
+        foreach (var item in Votes)
+        {
+            labels.Add($"Person {item.Key}");
+        }
+
+        return labels;
+    }
+
+    private List<IChartDataset> GetDefaultDataSets()
+    {
+        var datasets = new List<IChartDataset>();
+
+        var data = new List<double?>();
+
+        foreach (var item in Votes)
+        {
+            data.Add(item.Value);
+        }
+
+        datasets.Add(new DoughnutChartDataset()
+        {
+            Label = "2024 - Votes",
+            Data = data
+        });
+
+        return datasets;
+    }
+
+    private DoughnutChartDataset GetRandomDoughnutChartDataset(int vote, int total)
+    {
+        var count = new List<double?>();
+        count.Add(total);
+        return new() { Label = $"Person {vote}", Data = count };
+    }
+
+}
